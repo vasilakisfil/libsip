@@ -25,9 +25,9 @@ fn write() {
         format!("{}", header)
     );
 
+    //set a non quoted param (token), probably this example in SIP is not RFC-compliant
     let uri = Uri::sip(domain!("example.com")).auth(uri_auth!("guy"));
     let mut named_header = named_header!(uri);
-    //set a non quoted param (token)
     named_header.set_param(
         "+sip.instance",
         Some(GenValue::from(
@@ -40,9 +40,9 @@ fn write() {
         format!("{}", header)
     );
 
+    //set a quoted param
     let uri = Uri::sip(domain!("example.com")).auth(uri_auth!("guy"));
     let mut named_header = named_header!(uri);
-    //set a quoted param
     named_header.set_param(
         "+sip.instance",
         Some(GenValue::from(
@@ -51,7 +51,7 @@ fn write() {
     );
     let header = Header::Contact(named_header);
     assert_eq!(
-        "Contact: sip:guy@example.com;+sip.instance=\"<urn:uuid:1e020c2b-46f6-4867-9d11-65547b8967fa>\"".to_string(),
+        "Contact: <sip:guy@example.com>;+sip.instance=\"<urn:uuid:1e020c2b-46f6-4867-9d11-65547b8967fa>\"".to_string(),
         format!("{}", header)
     );
 }
@@ -82,9 +82,9 @@ fn read() {
         parse_contact_header::<VerboseError<&[u8]>>(b"Contact: <sip:guy@example.com>\r\n")
     );
 
+    //set a non quoted param (token), probably this example in SIP is not RFC-compliant
     let uri = Uri::sip(domain!("example.com")).auth(uri_auth!("guy"));
     let mut named_header = named_header!(uri);
-    //set a non quoted param (token)
     named_header.set_param(
         "+sip.instance",
         Some("<urn:uuid:1e020c2b-46f6-4867-9d11-65547b8967fa>"),
@@ -95,9 +95,34 @@ fn read() {
         )),
         named_header.parameters.get("+sip.instance")
     );
+    assert_eq!(
+        Some(Some(
+            String::from("<urn:uuid:1e020c2b-46f6-4867-9d11-65547b8967fa>")
+        )),
+        named_header.parameters.get("+sip.instance").map(|s| s.as_ref().map(|s| s.to_string()))
+    );
+
+    let uri = Uri::sip(domain!("example.com")).auth(uri_auth!("guy"));
+    let mut named_header = named_header!(uri);
+    named_header.set_param(
+        "+sip.instance",
+        Some("\"<urn:uuid:1e020c2b-46f6-4867-9d11-65547b8967fa>\""),
+    );
+    assert_eq!(
+        Some(&Some(
+            String::from("\"<urn:uuid:1e020c2b-46f6-4867-9d11-65547b8967fa>\"").into()
+        )),
+        named_header.parameters.get("+sip.instance")
+    );
+    assert_eq!(
+        Some(Some(
+            String::from("\"<urn:uuid:1e020c2b-46f6-4867-9d11-65547b8967fa>\"")
+        )),
+        named_header.parameters.get("+sip.instance").map(|s| s.as_ref().map(|s| s.to_string()))
+    );
     let header = Header::Contact(named_header);
     assert_eq!(
         Ok((remains.as_ref(), header)),
-        parse_contact_header::<VerboseError<&[u8]>>(b"Contact: sip:guy@example.com;instance=\"<urn:uuid:1e020c2b-46f6-4867-9d11-65547b8967fa>\"\r\n")
+        parse_contact_header::<VerboseError<&[u8]>>(b"Contact: <sip:guy@example.com>;+sip.instance=\"<urn:uuid:1e020c2b-46f6-4867-9d11-65547b8967fa>\"\r\n")
     );
 }
