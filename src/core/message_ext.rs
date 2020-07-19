@@ -1,11 +1,11 @@
-use crate::{Header, Method, NamedHeader, SipMessage, UriParam, ViaHeader};
+use crate::{Header, Method, NamedHeader, GenValue, SipMessage, UriParam, ViaHeader};
 
 pub trait SipMessageExt {
     fn from_header(&self) -> Option<&NamedHeader>;
 
     fn from_header_mut(&mut self) -> Option<&mut NamedHeader>;
 
-    fn from_header_tag(&self) -> Option<&String>;
+    fn from_header_tag(&self) -> Option<&GenValue>;
 
     fn set_from_header_tag(&mut self, tag: String);
 
@@ -15,7 +15,7 @@ pub trait SipMessageExt {
 
     fn to_header_mut(&mut self) -> Option<&mut NamedHeader>;
 
-    fn to_header_tag(&self) -> Option<&String>;
+    fn to_header_tag(&self) -> Option<&GenValue>;
 
     fn set_to_header_tag(&mut self, tag: String);
 
@@ -80,7 +80,7 @@ impl SipMessageExt for SipMessage {
         header!(self.headers_mut().0.iter_mut(), Header::From)
     }
 
-    fn from_header_tag(&self) -> Option<&String> {
+    fn from_header_tag(&self) -> Option<&GenValue> {
         named_header_param!(self.from_header(), "tag")
     }
 
@@ -103,7 +103,7 @@ impl SipMessageExt for SipMessage {
         header!(self.headers_mut().0.iter_mut(), Header::To)
     }
 
-    fn to_header_tag(&self) -> Option<&String> {
+    fn to_header_tag(&self) -> Option<&GenValue> {
         named_header_param!(self.to_header(), "tag")
     }
 

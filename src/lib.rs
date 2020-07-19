@@ -77,7 +77,7 @@ pub use crate::{
     },
     headers::{
         parse_header, via::ViaHeader, AuthContext, AuthHeader, AuthSchema, ContentType, Header,
-        Headers, Language, NamedHeader, SubscriptionState,
+        Headers, Language, NamedHeader, GenValue, SubscriptionState,
     },
     request::RequestGenerator,
     response::ResponseGenerator,

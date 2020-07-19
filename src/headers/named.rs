@@ -12,6 +12,7 @@ use crate::{headers::parse::parse_generic_param, parse::*, uri::parse_uri, Uri};
 use std::{
     collections::{hash_map::Entry, HashMap},
     fmt,
+    str::FromStr,
 };
 
 /// Header Value for Named Headers,
@@ -20,7 +21,7 @@ use std::{
 pub struct NamedHeader {
     pub display_name: Option<String>,
     pub uri: Uri,
-    pub parameters: HashMap<String, Option<String>>,
+    pub parameters: HashMap<String, Option<GenValue>>,
 }
 
 impl NamedHeader {
@@ -62,11 +63,11 @@ impl NamedHeader {
         let value = value.map(Into::into);
         match self.parameters.entry(name) {
             Entry::Occupied(mut entry) => {
-                entry.insert(value);
-            },
+                entry.insert(value.map(|s| s.into()));
+            }
             Entry::Vacant(entry) => {
-                entry.insert(value);
-            },
+                entry.insert(value.map(|s| s.into()));
+            }
         }
     }
 }
@@ -134,4 +135,57 @@ pub fn parse_named_field_params<'a, E: ParseError<&'a [u8]>>(
         input = data;
     }
     Ok((input, map))
+}
+
+/// Parse as many valid named field params as the input contains.
+pub fn parse_gen_named_field_params<'a, E: ParseError<&'a [u8]>>(
+    mut input: &'a [u8],
+) -> IResult<&'a [u8], HashMap<String, Option<GenValue>>, E> {
+    let mut map = HashMap::new();
+    while let Ok((data, (key, value))) = parse_generic_param::<E>(input) {
+        map.insert(key, value.map(|v| v.into()));
+        input = data;
+    }
+    Ok((input, map))
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum GenValue {
+    Token(String),
+    QuotedString(String),
+}
+
+impl From<String> for GenValue {
+    fn from(mut string: String) -> Self {
+        if string.starts_with("\"") && string.ends_with("\"") {
+            Self::QuotedString(string.drain(1..=string.len()).collect())
+        } else {
+            Self::Token(string)
+        }
+    }
+}
+
+impl Into<String> for GenValue {
+    fn into(self) -> String {
+        match self {
+            Self::Token(token) => token,
+            Self::QuotedString(quoted_string) => format!("\"{}\"", quoted_string),
+        }
+    }
+}
+
+impl GenValue {
+    pub fn parse<F: FromStr>(&self) -> Result<F, F::Err> {
+        match self {
+            GenValue::Token(inner) => FromStr::from_str(inner),
+            GenValue::QuotedString(inner) => FromStr::from_str(inner)
+        }
+    }
+}
+
+impl fmt::Display for GenValue {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", format!("{}", self))?;
+        Ok(())
+    }
 }

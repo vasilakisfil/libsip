@@ -10,7 +10,7 @@ pub use self::{
     auth::{AuthContext, AuthHeader, AuthSchema},
     content::ContentType,
     language::Language,
-    named::NamedHeader,
+    named::{NamedHeader, GenValue},
     parse::parse_header,
     subscription_state::SubscriptionState,
 };
