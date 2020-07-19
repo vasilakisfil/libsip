@@ -87,7 +87,11 @@ impl fmt::Display for NamedHeader {
         for (key, value) in self.parameters.iter() {
             write!(f, ";{}", key)?;
             if let Some(value) = value {
-                write!(f, "={}", value)?;
+                if value.starts_with("<") {
+                    write!(f, "=\"{}\"", value)?;
+                } else {
+                    write!(f, "={}", value)?;
+                }
             }
         }
         Ok(())
