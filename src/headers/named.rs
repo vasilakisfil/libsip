@@ -150,22 +150,43 @@ pub fn parse_gen_named_field_params<'a, E: ParseError<&'a [u8]>>(
 }
 
 #[derive(Debug, PartialEq, Clone)]
-pub enum GenValue {
+pub struct GenValue(GenValueType);
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum GenValueType {
     Token(String),
     QuotedString(String),
 }
 
 impl From<String> for GenValue {
+    fn from(string: String) -> Self {
+        GenValue(string.into())
+    }
+}
+
+impl From<&str> for GenValue {
+    fn from(string: &str) -> Self {
+        GenValue(string.to_string().into())
+    }
+}
+
+impl Into<String> for GenValue {
+    fn into(self) -> String {
+        self.0.into()
+    }
+}
+
+impl From<String> for GenValueType {
     fn from(mut string: String) -> Self {
         if string.starts_with("\"") && string.ends_with("\"") {
-            Self::QuotedString(string.drain(1..=string.len()).collect())
+            Self::QuotedString(string.drain(1..=(string.len() - 2)).collect())
         } else {
             Self::Token(string)
         }
     }
 }
 
-impl Into<String> for GenValue {
+impl Into<String> for GenValueType {
     fn into(self) -> String {
         match self {
             Self::Token(token) => token,
@@ -176,16 +197,32 @@ impl Into<String> for GenValue {
 
 impl GenValue {
     pub fn parse<F: FromStr>(&self) -> Result<F, F::Err> {
+        self.0.parse()
+    }
+}
+
+impl GenValueType {
+    pub fn parse<F: FromStr>(&self) -> Result<F, F::Err> {
         match self {
-            GenValue::Token(inner) => FromStr::from_str(inner),
-            GenValue::QuotedString(inner) => FromStr::from_str(inner)
+            Self::Token(inner) => FromStr::from_str(inner),
+            Self::QuotedString(inner) => FromStr::from_str(inner),
         }
     }
 }
 
 impl fmt::Display for GenValue {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", format!("{}", self))?;
+        write!(f, "{}", format!("{}", self.0))?;
+        Ok(())
+    }
+}
+
+impl fmt::Display for GenValueType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            GenValueType::Token(token) => write!(f, "{}", token)?,
+            GenValueType::QuotedString(quoted_string) => write!(f, "\"{}\"", quoted_string)?,
+        }
         Ok(())
     }
 }
