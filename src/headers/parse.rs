@@ -307,7 +307,10 @@ pub fn parse_contact_header<'a, E: ParseError<&'a [u8]>>(
     let (input, _) = opt(take_while(is_space))(input)?;
     let (input, _) = char(':')(input)?;
     let (input, _) = opt(take_while(is_space))(input)?;
-    let (input, out) = parse_named_field_value(input)?;
+
+    let (input, named_field_value_input) = take_while(|c| c != b'\r' && c != b';')(input)?;
+
+    let (_, out) = parse_named_field_value(named_field_value_input)?;
     let (input, params) = parse_contact_field_params(input)?;
     let (input, _) = tag("\r\n")(input)?;
     Ok((
