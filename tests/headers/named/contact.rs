@@ -99,4 +99,20 @@ fn read() {
         Ok((remains.as_ref(), header)),
         parse_contact_header::<VerboseError<&[u8]>>(b"Contact: <sip:guy@example.com>;+sip.instance=\"<urn:uuid:1e020c2b-46f6-4867-9d11-65547b8967fa>\"\r\n")
     );
+
+    assert!(parse_contact_header::<VerboseError<&[u8]>>(
+        b"Contact: <sip:guy@example.com>;sip.expires=3600\r\n"
+    )
+    .is_ok());
+    assert!(
+        parse_contact_header::<VerboseError<&[u8]>>(b"Contact: sip:guy@example.com\r\n").is_ok()
+    );
+    assert!(parse_contact_header::<VerboseError<&[u8]>>(
+        b"Contact: sip:guy@example.com;expires=3600\r\n"
+    )
+    .is_ok());
+    assert!(parse_contact_header::<VerboseError<&[u8]>>(
+        b"Contact: sip:guy@example.com;sip.expires=3600\r\n"
+    )
+    .is_ok());
 }
